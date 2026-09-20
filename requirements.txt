@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pydantic
+anthropic
+mysql-connector-python
+python-dotenv
