@@ -23,7 +23,7 @@ def classify_email(subject: str, body: str, has_attachments: bool) -> dict:
     - new_si_request (asking to prepare a new shipping instruction)
     - invoice_query (question about an invoice or payment)
     - general (any other legitimate business message)
-    - spam (unsolicited, irreleven or junk)
+    - spam (uMalaysia.nsolicited, irreleven or junk)
 
     Email subject: {subject}
     Email body: {body}
@@ -48,23 +48,20 @@ def classify_email(subject: str, body: str, has_attachments: bool) -> dict:
 
 def extract_fields(document_text: str, doc_type: str) -> dict:
     prompt = f"""Extract these 7 fields from this {doc_type} shipping document.
-        Field labels can vary between documents (e.g. "Port of Loading" may also appear as "Load Port" or "POL"). Match by meaning, not exact wording.
 
-        Fields to extract:
-        - shipper
-        - consignee
-        - notify_party
-        - port_of_loading
-        - port_of_discharge
-        - container_count
-        - gross_weight_kg
+        IMPORTANT: Document labels vary a lot and won't always match common terms exactly.
+        Don't just search for exact keywords — reason about what ROLE each piece of information plays in the document, then map it to the correct field.
 
-        Formatting rules:
-        - gross_weight_kg: return ONLY the numeric value in kilograms, no units, no commas (e.g. "21577" not "21,577 KG"). If given in another unit, convert to kg.
-        - container_count: return the value as it appears (e.g. "1 x 40'HC"), since container type matters.
-        - All other fields: reutrn the text as it appears in the document, trimmed of extra whitespace.
-        - If a field is genuinely not presnet anywhere in the document, use null.
+        Field meanings (not exact labels to search for):
+        - shipper: the party sending/exporting the goods (may appear as "Shipper", "Exporter", "Shipper/Exporter")
+        - consignee: the party the goods are being shipped TO, i.e. the receiving party on record (may appear as "Consignee", "Consignee (Non-Negotiable)", "To the Order of", or even a bank/agent if the shipment is bank-negotiated — but if a distinct "Notify Party" also exists, prefer whoever the document treats as the actual receiving party)
+        - notify_party: the party to be notified on arrival (may appear as "Notify", "Notify Party")
+        - port_of_loading: where the shipment departs from (may appear as "Port of Loading", "POL", "Load Port")
+        - port_of_discharge: where the shipment arrives (may appear as "Port of Discharge", "POD", "Discharge Port")
+        - container_count: number and type of containers (may appear as "Container Count", "No. of Containers", "Total Containers")
+        - gross_weight_kg: total weight in kg (may appear as "Gross Weight", "Gross Wt")
 
+        If a label is unusual or you're inferring meaning rather than matching an obvious label, lower your confidence score for that field accordingly — don't guess with high confidence.
 
         Document text:
         {document_text}
@@ -77,7 +74,9 @@ def extract_fields(document_text: str, doc_type: str) -> dict:
             "port_of_loading": "...", 
             "port_of_discharge": "...", 
             "container_count": "...", 
-            "gross_weight_kg": "...", "confidence": 0.0_to_1.0}}
+            "gross_weight_kg": "...", 
+            "confidence": 0.0_to_1.0,
+            "reasoning": "brief explanation of any uncertain fields, or 'all fields clearly labeled' if none"}}
 
         If a field cannot be found in the document, use null for that field's value."""
 

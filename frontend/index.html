@@ -3,7 +3,282 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>CheckDoc AI</title>
+    <link rel="stylesheet" href="style.css" />
   </head>
-  <body></body>
+
+  <body>
+    <div class="background-glow"></div>
+
+    <!-- =========================================
+         HEADER
+    ========================================== -->
+
+    <header class="header">
+      <div class="brand">
+        <div class="brand-logo">CD</div>
+        <div class="brand-name">CheckDoc</div>
+      </div>
+
+      <div class="system-status">
+        <span class="status-dot"></span>
+        System Online
+      </div>
+    </header>
+
+    <!-- =========================================
+         DASHBOARD
+    ========================================== -->
+
+    <main class="dashboard">
+      <!-- =====================================
+             LEFT PANEL
+        ====================================== -->
+
+      <aside class="left-panel">
+        <!-- INBOX -->
+        <section class="panel inbox-panel">
+          <div class="panel-header">
+            <span class="panel-title">Email Inbox</span>
+            <span id="email-count" class="panel-count">0</span>
+          </div>
+
+          <div class="categories">
+            <div class="category active" data-category="all">All</div>
+
+            <div class="category" data-category="pending">Pending</div>
+
+            <div class="category" data-category="completed">Completed</div>
+          </div>
+
+          <div id="email-list" class="email-list">
+            <div class="empty-state">Loading emails...</div>
+          </div>
+        </section>
+
+        <!-- ACTIVITY -->
+        <section class="panel terminal-panel">
+          <div class="terminal-header">
+            <span class="terminal-title">Activity</span>
+            <span class="terminal-status">LIVE</span>
+          </div>
+
+          <div id="terminal" class="terminal">
+            <div class="terminal-line">System initialized...</div>
+
+            <div class="terminal-line success">AI service ready</div>
+          </div>
+        </section>
+      </aside>
+
+      <!-- =====================================
+             CENTER PANEL
+        ====================================== -->
+
+      <section class="panel center-panel">
+        <div class="email-content">
+          <!-- EMAIL -->
+          <div id="email-container">
+            <div class="empty-state">Select an email to begin analysis.</div>
+          </div>
+
+          <!-- AI ANALYSIS -->
+          <div id="email-analysis" class="email-analysis">
+            <div class="analysis-header">
+              <div>
+                <span class="content-label"> AI ANALYSIS </span>
+
+                <div id="analysis-category" class="analysis-category">
+                  Waiting for classification
+                </div>
+              </div>
+
+              <div id="analysis-status" class="analysis-status neutral">
+                WAITING
+              </div>
+            </div>
+
+            <!-- BIG CONFIDENCE -->
+
+            <div class="big-confidence">
+              <span class="content-label"> CLASSIFICATION CONFIDENCE </span>
+
+              <div id="analysis-confidence" class="big-confidence-number">
+                —
+              </div>
+
+              <div class="analysis-confidence-bar">
+                <div id="analysis-confidence-fill"></div>
+              </div>
+            </div>
+
+            <!-- CLASSIFICATION -->
+
+            <div class="analysis-main-result">
+              <span class="content-label"> CLASSIFICATION RESULT </span>
+
+              <div id="analysis-result-category" class="large-result">
+                Waiting
+              </div>
+            </div>
+
+            <!-- REVIEW -->
+
+            <div class="analysis-review">
+              <div class="result-box">
+                <span class="content-label"> REVIEW REQUIRED </span>
+
+                <strong id="analysis-review-status"> — </strong>
+              </div>
+
+              <div class="result-box">
+                <span class="content-label"> REASON </span>
+
+                <strong id="analysis-reason">
+                  Classification has not been performed yet.
+                </strong>
+              </div>
+            </div>
+
+            <!-- EXTRACTION -->
+
+            <div id="extraction-results" class="extraction-results hidden">
+              <div class="extraction-header">
+                <span class="content-label"> DOCUMENT EXTRACTION </span>
+
+                <span id="extraction-status" class="result-status">
+                  WAITING
+                </span>
+              </div>
+
+              <div class="document-results">
+                <!-- SI -->
+
+                <div class="document-result-card">
+                  <div class="document-result-header">
+                    <strong> SI </strong>
+
+                    <span id="si-result-status" class="result-status">
+                      WAITING
+                    </span>
+                  </div>
+
+                  <div id="si-fields" class="document-fields">
+                    No data extracted
+                  </div>
+                </div>
+
+                <!-- B/L -->
+
+                <div class="document-result-card">
+                  <div class="document-result-header">
+                    <strong> B/L </strong>
+
+                    <span id="bl-result-status" class="result-status">
+                      WAITING
+                    </span>
+                  </div>
+
+                  <div id="bl-fields" class="document-fields">
+                    No data extracted
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================
+             RIGHT PANEL
+        ====================================== -->
+
+      <aside class="panel right-panel">
+        <!-- ACTIONS -->
+
+        <section class="action-section">
+          <span class="content-label"> AI PROCESSING </span>
+
+          <div class="action-title">Document Analysis</div>
+
+          <div class="action-description">
+            Run AI classification, document extraction, and SI/B/L comparison on
+            the selected email.
+          </div>
+
+          <div class="action-buttons">
+            <button
+              id="classify-btn"
+              class="action-button primary"
+              onclick="classifySelectedEmail()"
+            >
+              CLASSIFY
+            </button>
+
+            <button
+              id="extract-btn"
+              class="action-button"
+              onclick="extractSelectedEmail()"
+            >
+              EXTRACT
+            </button>
+
+            <button
+              id="compare-btn"
+              class="action-button"
+              onclick="compareSelectedEmail()"
+            >
+              COMPARE
+            </button>
+          </div>
+        </section>
+
+        <!-- CLASSIFICATION CARD -->
+
+        <section class="classification-card">
+          <div class="classification-label">Classification</div>
+
+          <div id="classification-result" class="classification-result">
+            Waiting
+          </div>
+
+          <div class="confidence-container">
+            <div class="confidence-header">
+              <span class="confidence-label"> Confidence </span>
+
+              <span id="confidence" class="confidence-value"> — </span>
+            </div>
+
+            <div class="confidence-bar">
+              <div id="confidence-fill"></div>
+            </div>
+          </div>
+
+          <div class="reason-box">
+            <div class="reason-label">Reason</div>
+
+            <div id="reason" class="reason-text">
+              No classification performed yet.
+            </div>
+          </div>
+        </section>
+
+        <!-- COMPARISON RESULT -->
+
+        <section id="comparison-result" class="comparison-result hidden">
+          <div class="result-header">
+            <span class="card-label"> COMPARISON RESULT </span>
+
+            <span id="comparison-status" class="result-status"> — </span>
+          </div>
+
+          <div id="comparison-summary" class="comparison-summary">—</div>
+
+          <div id="mismatch-list" class="mismatch-list"></div>
+        </section>
+      </aside>
+    </main>
+
+    <script src="index.js"></script>
+  </body>
 </html>

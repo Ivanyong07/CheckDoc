@@ -4,6 +4,7 @@ import uvicorn
 import uuid
 from sqlalchemy.future import select
 import time
+import asyncio
 
 from schemas import EmailIn, EmailOut
 from models import Email, Comparison
@@ -13,10 +14,19 @@ from agents import classify_email, extract_fields
 from sqlalchemy.ext.asyncio import AsyncSession
 from data.loader import Inbox
 import sys
+from fastapi.middleware.cors import CORSMiddleware
 sys.path.append("src/append/data")
 
 app = FastAPI()
 inbox = Inbox("data")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:5500"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/ingest")  # done
@@ -69,7 +79,7 @@ async def classify(id: str, session: AsyncSession = Depends(get_async_session)):
             if attempt == max_retries:
                 raise HTTPException(
                     500, f"Classification failed after {max_retries} attempts: {str(e)}")
-            time.sleep(1)  # wait for 1s
+            await asyncio.sleep(1)  # wait for 1s
 
     email.classification = classification_result["category"]
     email.confidence = classification_result["confidence"]
@@ -109,21 +119,34 @@ async def extract_si_and_bl_attachments(id: str, session: AsyncSession = Depends
     for attempt in range(max_retries + 1):
         try:
             si_result = extract_fields(si_text, "SI")
-            bl_result = extract_fields(si_text, "BL")
+            bl_result = extract_fields(bl_text, "BL")
             break
         except Exception as e:
             if attempt == max_retries:
                 raise HTTPException(
                     500, f"Extraction failed after {max_retries+1} attempts: {str(e)}")
-            time.sleep(1)
+            await asyncio.sleep(1)
 
-    comparison = Comparison(
-        email_id=id,
-        si_fields=si_result,
-        bl_fields=bl_result
-    )
+    if "error" in si_result or "error" in bl_result:
+        raise HTTPException(
+            500, "Extraction returned invalid data - not saved")
 
-    session.add(comparison)
+    existing = await session.execute(select(Comparison).where(Comparison.email_id == id))
+    comparison = existing.scalar_one_or_none()
+
+    if comparison:
+        comparison.si_fields = si_result
+        comparison.bl_fields = bl_result
+        comparison.mismatches = None
+        comparison.result_summary = None
+    else:
+        comparison = Comparison(
+            email_id=id,
+            si_fields=si_result,
+            bl_fields=bl_result
+        )
+        session.add(comparison)
+
     await session.commit()
 
     return {"si_fields": si_result, "bl_fields": bl_result}
@@ -179,9 +202,12 @@ async def compare(id: str, session: AsyncSession = Depends(get_async_session)):
     si_confidence = comparison.si_fields.get("confidence", 1.0)
     bl_confidence = comparison.bl_fields.get("confidence", 1.0)
 
-    if si_confidence < 0.7 or bl_confidence < 0.7:
+    if si_confidence < 0.7:
         comparison.needs_review = True
-        comparison.review_reason = f"Low extraction confidence (SI: {si_confidence}, BL: {bl_confidence})"
+        comparison.review_reason = f"SI: {comparison.si_fields.get('reasoning', 'low confidence')}"
+    elif bl_confidence < 0.7:
+        comparison.needs_review = True
+        comparison.review_reason = f"BL: {comparison.si_fields.get('reasoning', 'low confidence')}"
 
     for field in FIELDS:
         si_val = comparison.si_fields.get(field)
@@ -219,6 +245,31 @@ async def show_email_id(id: str, session: AsyncSession = Depends(get_async_sessi
     if not email:
         raise HTTPException(404, "Email not found")
     return email
+
+
+@app.get("/emails/{id}/comparison")
+async def show_comparison(
+    id: str,
+    session: AsyncSession = Depends(get_async_session)
+):
+    result = await session.execute(
+        select(Comparison).where(Comparison.email_id == id)
+    )
+
+    comparison = result.scalar_one_or_none()
+
+    if not comparison:
+        return None
+
+    return {
+        "si_fields": comparison.si_fields,
+        "bl_fields": comparison.bl_fields,
+        "mismatches": comparison.mismatches or [],
+        "result_summary": comparison.result_summary,
+        "extraction_confidence": comparison.extraction_confidence,
+        "needs_review": comparison.needs_review,
+        "review_reason": comparison.review_reason
+    }
 
 
 if __name__ == "__main__":

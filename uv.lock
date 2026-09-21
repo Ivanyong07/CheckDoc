@@ -88,6 +88,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "fastapi-users-db-sqlalchemy" },
     { name = "groq" },
+    { name = "middleware" },
     { name = "python-dotenv" },
     { name = "sqlalchemy" },
     { name = "uvicorn", extra = ["standard"] },
@@ -102,6 +103,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.141.1" },
     { name = "fastapi-users-db-sqlalchemy", specifier = ">=7.0.0" },
     { name = "groq", specifier = ">=1.7.0" },
+    { name = "middleware", specifier = ">=1.2.3" },
     { name = "python-dotenv", specifier = ">=1.2.3" },
     { name = "sqlalchemy", specifier = ">=2.0.54" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.53.0" },
@@ -767,6 +769,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/7b/cf/6780ab8bc3b84a1cc
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/c0/4bc973defd1270b89ccaae04cef0d5fa3ea85b59b108ad2c08aeea9afb76/makefun-1.16.0-py2.py3-none-any.whl", hash = "sha256:43baa4c3e7ae2b17de9ceac20b669e9a67ceeadff31581007cca20a07bbe42c4", size = 22923, upload-time = "2025-05-09T15:00:41.042Z" },
 ]
+
+[[package]]
+name = "middleware"
+version = "1.2.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f7/a4/3cdc5609be79de5a837873d4f8e5bcefd0ae17233f57aac70f10d885daef/middleware-1.2.3.tar.gz", hash = "sha256:e5370d5781c440637cb87be4964fc5cb9cec7d4c9a5bb6a7bf0bbae326639c5c", size = 4211, upload-time = "2017-07-18T01:55:41.873Z" }
 
 [[package]]
 name = "pwdlib"

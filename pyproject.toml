@@ -15,6 +15,7 @@ dependencies = [
     "fastapi>=0.141.1",
     "fastapi-users-db-sqlalchemy>=7.0.0",
     "groq>=1.7.0",
+    "middleware>=1.2.3",
     "python-dotenv>=1.2.3",
     "sqlalchemy>=2.0.54",
     "uvicorn[standard]>=0.53.0",
