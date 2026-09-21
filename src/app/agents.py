@@ -93,3 +93,95 @@ def extract_fields(document_text: str, doc_type: str) -> dict:
         return json.loads(raw_text)
     except json.JSONDecodeError:
         return {"error": "failed to parse", "confidence": 0.0}
+
+
+def compare_documents(si_fields: dict, bl_fields: dict) -> dict:
+    prompt = f"""
+        You are a shipping document verification AI.
+
+        Compare the extracted Shipping Instruction (SI) fields against
+        the extracted Bill of Lading (B/L) fields.
+
+        SI fields:
+        {json.dumps(si_fields, indent=2)}
+
+        B/L fields:
+        {json.dumps(bl_fields, indent=2)}
+
+        Compare these 7 fields:
+        - shipper
+        - consignee
+        - notify_party
+        - port_of_loading
+        - port_of_discharge
+        - container_count
+        - gross_weight_kg
+
+        Rules:
+
+        1. Compare the actual values, not just whether the fields exist.
+        2. Ignore differences caused only by:
+        - capitalization
+        - extra spaces
+        - commas in numbers
+        3. For container_count and gross_weight_kg, compare the numeric values.
+        4. If two values represent different information, mark them as a mismatch.
+        5. If a field is missing from either document, mark it as a mismatch
+        and explain that the field is missing.
+        6. If there are ANY mismatches, needs_review MUST be true.
+        7. If there are NO mismatches, needs_review MUST be false.
+        8. result_summary must clearly state whether the documents match
+        and how many mismatches were found.
+        9. review_reason must explain why manual review is required.
+        10. If no review is required, review_reason must be null.
+
+        Return ONLY valid JSON using exactly this structure:
+
+        {{
+            "mismatches": [
+                {{
+                    "field": "field_name",
+                    "si_value": "value from SI",
+                    "bl_value": "value from B/L",
+                    "reason": "short explanation"
+                }}
+            ],
+            "result_summary": "short summary",
+            "needs_review": true,
+            "review_reason": "short explanation"
+        }}
+
+        If there are no mismatches:
+
+        {{
+            "mismatches": [],
+            "result_summary": "No mismatch detected",
+            "needs_review": false,
+            "review_reason": null
+        }}
+        """
+
+    response = client.chat.completions.create(
+        model="openai/gpt-oss-120b",
+        max_tokens=2000,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        response_format={"type": "json_object"}
+    )
+
+    raw_text = response.choices[0].message.content.strip()
+
+    try:
+        return json.loads(raw_text)
+
+    except json.JSONDecodeError:
+        return {
+            "mismatches": [],
+            "result_summary": "Failed to parse comparison result",
+            "needs_review": True,
+            "review_reason": "AI comparison response could not be parsed"
+        }

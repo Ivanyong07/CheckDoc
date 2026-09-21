@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CheckDoc AI</title>
+    <link rel="icon" type="image/jpeg" href="images/checkDoc.jpeg" />
     <link rel="stylesheet" href="style.css" />
   </head>
 
@@ -16,7 +17,9 @@
 
     <header class="header">
       <div class="brand">
-        <div class="brand-logo">CD</div>
+        <div class="brand-logo">
+          <img src="images/checkDoc.jpeg" alt="CheckDoc" />
+        </div>
         <div class="brand-name">CheckDoc</div>
       </div>
 
@@ -47,6 +50,11 @@
             <div class="category active" data-category="all">All</div>
 
             <div class="category" data-category="pending">Pending</div>
+
+            <div class="category" data-category="review">
+              <span>NEED REVIEW</span>
+              <span id="review-count">0</span>
+            </div>
 
             <div class="category" data-category="completed">Completed</div>
           </div>

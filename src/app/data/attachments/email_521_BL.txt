@@ -1,0 +1,10 @@
+DRAFT BILL OF LADING
+
+Shipper: GLOBAL PAPER LTD
+Consignee: PACIFIC TRADING SDN BHD
+Notify Party: EASTERN LOGISTICS INC
+Port of Loading: PORT KLANG, MALAYSIA
+Port of Discharge: LONG BEACH, USA
+Container Count: 3
+Gross Weight (kg): 19200
+Bill of Lading No: MSDUL0953847261

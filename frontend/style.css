@@ -58,6 +58,12 @@ body {
     gap: 12px;
 }
 
+.brand-logo img{
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+}
+
 .brand-logo {
     width: 34px;
     height: 34px;
@@ -844,7 +850,7 @@ body {
 .comparison-summary {
     margin-top: 10px;
     color: #c4cad5;
-    font-size: 11px;
+    font-size: 20px;
     font-weight: 600;
     line-height: 1.6;
 }
@@ -864,14 +870,14 @@ body {
 
 .mismatch-field {
     color: #d1d6df;
-    font-size: 10px;
+    font-size: 15px;
     font-weight: 700;
 }
 
 .mismatch-values {
     margin-top: 4px;
     color: #7f899b;
-    font-size: 9px;
+    font-size: 15px;
     line-height: 1.5;
 }
 
@@ -964,4 +970,48 @@ body {
     .email-subject {
         font-size: 16px;
     }
+}
+
+.review-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 3px 7px;
+    border-radius: 5px;
+    background: rgba(255, 92, 92, 0.12);
+    color: #ff5c5c;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.mismatch-value {
+    color: #ff5c5c;
+    font-weight: 700;
+}
+
+.mismatch-value-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.mismatch-label {
+    font-weight: 600;
+}
+
+.mismatch-reason {
+    margin-top: 8px;
+    font-size: 12px;
+    opacity: 0.75;
+}
+
+.comparison-review {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.comparison-review .result-box {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }

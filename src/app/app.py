@@ -9,7 +9,7 @@ import asyncio
 from schemas import EmailIn, EmailOut
 from models import Email, Comparison
 from db import get_async_session
-from agents import classify_email, extract_fields
+from agents import (classify_email, extract_fields, compare_documents)
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from data.loader import Inbox
@@ -172,69 +172,140 @@ def extract_number(value):
 
 
 @app.post("/emails/{id}/compare")
-async def compare(id: str, session: AsyncSession = Depends(get_async_session)):
-    result = await session.execute(select(Comparison).where(Comparison.email_id == id))
+async def compare(
+    id: str,
+    session: AsyncSession = Depends(get_async_session)
+):
+    result = await session.execute(
+        select(Comparison).where(
+            Comparison.email_id == id
+        )
+    )
 
     comparison = result.scalar_one_or_none()
 
     if not comparison:
-        raise HTTPException(404, "Run extract first")
-
-    mismatches = []
-
-    missing_si = [f for f in FIELDS if not comparison.si_fields.get(f)]
-    missing_bl = [f for f in FIELDS if not comparison.bl_fields.get(f)]
-
-    if missing_si or missing_bl:
-        comparison.needs_review = True
-        comparison.review_reason = (
-            f"Could not extract : SI missing {missing_si}, BL missing {missing_bl}"
+        raise HTTPException(
+            404,
+            "Run extract first"
         )
 
-        await session.commit()
-        return {
-            "mismatches": [],
-            "result_summary": "Escalated - incomplete extraction",
-            "needs_review": True,
-            "review_reason": comparison.review_reason
-        }
+    if not comparison.si_fields or not comparison.bl_fields:
+        raise HTTPException(
+            400,
+            "SI or B/L extraction data is missing"
+        )
 
-    si_confidence = comparison.si_fields.get("confidence", 1.0)
-    bl_confidence = comparison.bl_fields.get("confidence", 1.0)
+    max_retries = 2
+    comparison_result = None
 
-    if si_confidence < 0.7:
-        comparison.needs_review = True
-        comparison.review_reason = f"SI: {comparison.si_fields.get('reasoning', 'low confidence')}"
-    elif bl_confidence < 0.7:
-        comparison.needs_review = True
-        comparison.review_reason = f"BL: {comparison.si_fields.get('reasoning', 'low confidence')}"
+    for attempt in range(max_retries + 1):
+        try:
+            comparison_result = compare_documents(
+                comparison.si_fields,
+                comparison.bl_fields
+            )
+            break
 
-    for field in FIELDS:
-        si_val = comparison.si_fields.get(field)
-        bl_val = comparison.bl_fields.get(field)
+        except Exception as e:
+            if attempt == max_retries:
+                raise HTTPException(
+                    500,
+                    f"Comparison failed after {max_retries + 1} attempts: {str(e)}"
+                )
 
-        if field in ["gross_weight_kg", "container_count"]:
-            if extract_number(si_val) != extract_number(bl_val):
-                mismatches.append(
-                    {"field": field, "si_value": si_val, "bl_value": bl_val})
-        else:
-            if normalize_value(si_val) != normalize_value(bl_val):
-                mismatches.append(
-                    {"field": field, "si_value": si_val, "bl_value": bl_val})
+            await asyncio.sleep(1)
 
-    summary = "No mistatch detected" if not mismatches else f"{len(mismatches)} field(s) mismatched"
+    mismatches = comparison_result.get(
+        "mismatches",
+        []
+    )
+
+    result_summary = comparison_result.get(
+        "result_summary",
+        "No comparison summary available"
+    )
+
+    needs_review = comparison_result.get(
+        "needs_review",
+        True
+    )
+
+    review_reason = comparison_result.get(
+        "review_reason"
+    )
 
     comparison.mismatches = mismatches
-    comparison.result_summary = summary
-    await session.commit()
+    comparison.result_summary = result_summary
+    comparison.needs_review = needs_review
+    comparison.review_reason = review_reason
 
-    return {"mismatches": mismatches, "result_summary": summary}
+    await session.commit()
+    await session.refresh(comparison)
+
+    return {
+        "mismatches": comparison.mismatches,
+        "result_summary": comparison.result_summary,
+        "needs_review": comparison.needs_review,
+        "review_reason": comparison.review_reason
+    }
 
 
 @app.get("/emails/")
-async def show_email(session: AsyncSession = Depends(get_async_session)):
-    result = await session.execute(select(Email))
-    return result.scalars().all()
+async def get_emails(
+    session: AsyncSession = Depends(get_async_session)
+):
+    result = await session.execute(
+        select(Email)
+    )
+
+    emails = result.scalars().all()
+
+    response = []
+
+    for email in emails:
+        comparison_result = await session.execute(
+            select(Comparison).where(
+                Comparison.email_id == email.id
+            )
+        )
+
+        comparison = comparison_result.scalar_one_or_none()
+
+        response.append({
+            "id": email.id,
+            "subject": email.subject,
+            "sender": email.sender,
+            "body": email.body,
+            "classification": email.classification,
+            "confidence": email.confidence,
+
+            # Classification review
+            "classification_needs_review": email.needs_review,
+            "classification_review_reason": email.review_reason,
+
+            # Document comparison review
+            "comparison_needs_review": (
+                comparison.needs_review
+                if comparison
+                else False
+            ),
+            "comparison_review_reason": (
+                comparison.review_reason
+                if comparison
+                else None
+            ),
+            "needs_review": (
+                email.needs_review
+                or (
+                    comparison.needs_review
+                    if comparison
+                    else False
+                )
+            )
+        })
+
+    return response
 
 
 @app.get("/emails/{id}")
