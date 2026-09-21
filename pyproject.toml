@@ -8,9 +8,16 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "aiomysql>=0.3.2",
+    "aiosqlite>=0.22.1",
     "anthropic>=1.7.0",
+    "asyncmy>=0.2.14",
+    "fastapi>=0.141.1",
+    "fastapi-users-db-sqlalchemy>=7.0.0",
+    "groq>=1.7.0",
     "python-dotenv>=1.2.3",
-    "uvicorn>=0.53.0",
+    "sqlalchemy>=2.0.54",
+    "uvicorn[standard]>=0.53.0",
 ]
 
 [project.scripts]
@@ -19,3 +26,6 @@ app = "app:main"
 [build-system]
 requires = ["uv_build>=0.12.17,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.uv]
+package = false

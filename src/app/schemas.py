@@ -19,6 +19,9 @@ class EmailOut(BaseModel):
     needs_review: bool = False
     review_reason: Optional[str] = None
 
+    class Config:
+        from_attributes = True
+
 
 class Comparison(BaseModel):
     email_id: str

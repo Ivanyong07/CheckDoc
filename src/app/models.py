@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, Boolean, JSON
+from sqlalchemy import Column, String, Float, Boolean, JSON, Integer, ForeignKey, Text
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -17,4 +17,18 @@ class Email(Base):
     confidence = Column(Float, nullable=True)
     needs_review = Column(Boolean, default=False)
     review_reason = Column(String(500), nullable=True)
-    comparison_result = Column(JSON, nullable=True)
+
+
+class Comparison(Base):
+    __tablename__ = "comparison"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email_id = Column(String(36), ForeignKey("emails.id"), nullable=False)
+    si_fields = Column(JSON)
+    bl_fields = Column(JSON)
+    mismatches = Column(JSON)
+    result_summary = Column(Text)
+
+    extraction_confidence = Column(Float, nullable=True)
+    needs_review = Column(Boolean, default=False)
+    review_reason = Column(Text, nullable=True)
