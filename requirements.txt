@@ -1,6 +1,6 @@
 fastapi
 uvicorn
-pydantic
-anthropic
-mysql-connector-python
+sqlalchemy
+aiomysql
+groq
 python-dotenv
